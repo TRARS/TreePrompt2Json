@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>MVVM\Resources\AppIcon.ico</ApplicationIcon>
+    <Configurations>PublicBuild;Debug</Configurations>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="MVVM\Resources\AppIcon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.4" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\TreePrompt2Json.PromptBuilder\TreePrompt2Json.PromptBuilder.csproj" />
+  </ItemGroup>
+
+  <!-- 🔧 开发时使用 ProjectReference（非 PublicBuild） -->
+  <ItemGroup Condition="'$(Configuration)' != 'PublicBuild'">
+    <ProjectReference Include="..\..\TrarsUI\TrarsUI.Shared\TrarsUI.Shared.csproj" />
+    <ProjectReference Include="..\..\TrarsUI\TrarsUI.SourceGenerators\TrarsUI.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <!-- 📦 发布时使用 DLL 和 Analyzer（仅 PublicBuild） -->
+  <ItemGroup Condition="'$(Configuration)' == 'PublicBuild'">
+    <Reference Include="TrarsUI.Shared">
+      <HintPath>..\SharedLibs\libs\TrarsUI.Shared.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Analyzer Include="..\SharedLibs\libs\TrarsUI.SourceGenerators.dll" />
+  </ItemGroup>
+</Project>

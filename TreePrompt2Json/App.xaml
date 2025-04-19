@@ -1,0 +1,13 @@
+﻿<Application x:Class="TreePrompt2Json.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:TreePrompt2Json">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/TreePrompt2Json.PromptBuilder;component/Entry.xaml"/>
+                <ResourceDictionary Source="/TrarsUI.Shared;component/Resources/Colors.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35527.113
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TreePrompt2Json", "TreePrompt2Json\TreePrompt2Json.csproj", "{62A7DBA7-3F60-43FE-92E8-BC8B656171C4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TreePrompt2Json.PromptBuilder", "TreePrompt2Json.PromptBuilder\TreePrompt2Json.PromptBuilder.csproj", "{79F7EC49-B56F-4457-8021-D04B4DD9AD53}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TreePrompt2Json.Format", "TreePrompt2Json.Format\TreePrompt2Json.Format.csproj", "{FBF3BB93-5F44-45D0-B696-965B0CAC8339}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibs", "SharedLibs\SharedLibs.csproj", "{6BB62EDA-05BB-4A53-9FFC-BF47651B2CA0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		PublicBuild|Any CPU = PublicBuild|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{62A7DBA7-3F60-43FE-92E8-BC8B656171C4}.PublicBuild|Any CPU.ActiveCfg = PublicBuild|Any CPU
+		{62A7DBA7-3F60-43FE-92E8-BC8B656171C4}.PublicBuild|Any CPU.Build.0 = PublicBuild|Any CPU
+		{79F7EC49-B56F-4457-8021-D04B4DD9AD53}.PublicBuild|Any CPU.ActiveCfg = PublicBuild|Any CPU
+		{79F7EC49-B56F-4457-8021-D04B4DD9AD53}.PublicBuild|Any CPU.Build.0 = PublicBuild|Any CPU
+		{FBF3BB93-5F44-45D0-B696-965B0CAC8339}.PublicBuild|Any CPU.ActiveCfg = PublicBuild|Any CPU
+		{FBF3BB93-5F44-45D0-B696-965B0CAC8339}.PublicBuild|Any CPU.Build.0 = PublicBuild|Any CPU
+		{6BB62EDA-05BB-4A53-9FFC-BF47651B2CA0}.PublicBuild|Any CPU.ActiveCfg = PublicBuild|Any CPU
+		{6BB62EDA-05BB-4A53-9FFC-BF47651B2CA0}.PublicBuild|Any CPU.Build.0 = PublicBuild|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
