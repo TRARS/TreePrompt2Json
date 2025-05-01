@@ -2,6 +2,16 @@
 
 namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
 {
+#if !PUBLIC_BUILD
+    partial class PromptEditorVM
+    {
+        // 用于防止 Debug 构建时 命名空间 被裁剪
+        static readonly Type[] _ = {
+            typeof(AlertProxy),
+        };
+    }
+#endif
+
 #if PUBLIC_BUILD
     partial class PromptEditorVM
     {
@@ -92,10 +102,11 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
             gate[0].Add(CreateTVN("physiology"));
             gate[0][10].Add(CreateTVN("vulva"));
             gate[0][10][0].Add(CreateTVN("entrance")); currentGate.JsonValue = "";
+            gate[0][10][0].Add(CreateTVN("mons_pubis")); currentGate.JsonValue = "";
             gate[0][10][0].Add(CreateTVN("clitoris")); currentGate.JsonValue = "";
             gate[0][10][0].Add(CreateTVN("labia_minora")); currentGate.JsonValue = "";
             gate[0][10][0].Add(CreateTVN("labia_majora")); currentGate.JsonValue = "";
-            gate[0][10][0].Add(CreateTVN("pubic_hair")); currentGate.JsonValue = "";
+            gate[0][10][0].Add(CreateTVN("pubes")); currentGate.JsonValue = "";
             gate[0][10][0].Add(CreateTVN("hymen")); currentGate.JsonValue = "";
             gate[0][10].Add(CreateTVN("vaginal")); currentGate.JsonValue = "";
             gate[0][10].Add(CreateTVN("uterus")); currentGate.JsonValue = "";

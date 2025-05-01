@@ -189,11 +189,52 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
                     }
                     catch (Exception ex)
                     {
-                        // 序列化失败视为 string
-                        this.PromptPacketList.Add(new PromptPacket(TextIcon, "text", new PromptString()
+                        // 反序列化失败，视为 string
+                        bool isPngText = false;
+
+                        // 如果载入的是png，则尝试读取tEXt数据块
+                        if (Path.GetExtension(firstFile).ToLower() == ".png")
                         {
-                            Text = $"{content}"
-                        }));
+                            using (var stream = new FileStream(firstFile, FileMode.Open, FileAccess.Read))
+                            using (var reader = new BinaryReader(stream))
+                            {
+                                var chunk = FindFirstTextChunk(reader);
+                                if (chunk != null)
+                                {
+                                    content = chunk.DataString;
+
+                                    if (IsBase64String(content))
+                                    {
+                                        byte[] bytes = Convert.FromBase64String(content);
+                                        string decodedText = Encoding.UTF8.GetString(bytes);
+
+                                        this.PromptPacketList.Add(new PromptPacket(JsonIcon, "text", new PromptString()
+                                        {
+                                            Text = decodedText
+                                        }));
+                                    }
+                                    else
+                                    {
+                                        this.PromptPacketList.Add(new PromptPacket(JsonIcon, "text", new PromptString()
+                                        {
+                                            Text = $"{content}"
+                                        }));
+                                    }
+
+                                    isPngText = true;
+                                }
+                            }
+                        }
+
+                        // 原样添加
+                        if (isPngText is false)
+                        {
+                            this.PromptPacketList.Add(new PromptPacket(TextIcon, "text", new PromptString()
+                            {
+                                Text = $"{content}"
+                            }));
+                        }
+
                         Debug.WriteLine($"{ex.Message}");
                     }
                 }
@@ -1177,6 +1218,103 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
             else
             {
                 return (JsonSerializer.Serialize(rootObj, this.UseJsonl ? jsonlOptions : jsonOptions) + "");
+            }
+        }
+
+        /// <summary>
+        /// 查找第一个 tEXt Chunk
+        /// </summary>
+        private PngChunk FindFirstTextChunk(BinaryReader reader)
+        {
+            // 跳过 PNG 文件头（8字节签名）
+            reader.BaseStream.Position = 8;
+
+            while (reader.BaseStream.Position < reader.BaseStream.Length)
+            {
+                // 读取 Length (4 bytes, big endian)
+                byte[] lenBytes = reader.ReadBytes(4);
+                if (lenBytes.Length < 4) break;  // EOF
+                int length = (lenBytes[0] << 24) | (lenBytes[1] << 16) | (lenBytes[2] << 8) | lenBytes[3];
+
+                // 读取 Name (4 bytes)
+                byte[] nameBytes = reader.ReadBytes(4);
+                if (nameBytes.Length < 4) break;
+                string name = System.Text.Encoding.ASCII.GetString(nameBytes);
+
+                // 读取 Data
+                byte[] dataBytes = reader.ReadBytes(length);
+                if (dataBytes.Length < length) break;
+
+                // 读取 CRC
+                byte[] crcBytes = reader.ReadBytes(4);
+                if (crcBytes.Length < 4) break;
+
+                if (name == "tEXt")
+                {
+                    // 处理 keyword + 0x00 + text
+                    int sepIndex = Array.IndexOf(dataBytes, (byte)0x00);
+
+                    string text = "";
+                    if (sepIndex >= 0 && sepIndex + 1 < dataBytes.Length)
+                    {
+                        text = Encoding.UTF8.GetString(dataBytes, sepIndex + 1, dataBytes.Length - sepIndex - 1);
+                    }
+                    else if (sepIndex < 0)
+                    {
+                        // 没有找到 separator → 整个当作 text
+                        text = Encoding.UTF8.GetString(dataBytes);
+                    }
+                    // else: 如果 sepIndex 刚好是最后一个字节，text = 空
+
+                    var chunk = new PngChunk
+                    {
+                        Length = length,
+                        Name = name,
+                        DataBytes = dataBytes,
+                        DataString = text,
+                        CrcBytes = crcBytes,
+                        FullChunk = new byte[4 + 4 + length + 4]
+                    };
+
+                    // 组装完整 Chunk
+                    Buffer.BlockCopy(lenBytes, 0, chunk.FullChunk, 0, 4);
+                    Buffer.BlockCopy(nameBytes, 0, chunk.FullChunk, 4, 4);
+                    Buffer.BlockCopy(dataBytes, 0, chunk.FullChunk, 8, length);
+                    Buffer.BlockCopy(crcBytes, 0, chunk.FullChunk, 8 + length, 4);
+
+                    return chunk;  // 找到第一个 tEXt，返回
+                }
+                else
+                {
+                    // 不是 tEXt，继续下一个 Chunk
+                    // （指针已经自动移动，无需复位）
+                }
+            }
+
+            return null;  // 没找到 tEXt
+        }
+
+        /// <summary>
+        /// 检查字符串是否为有效的Base64编码
+        /// </summary>
+        private bool IsBase64String(string base64)
+        {
+            if (string.IsNullOrEmpty(base64))
+                return false;
+
+            base64 = base64.Trim();
+
+            if (base64.Length % 4 != 0)
+                return false;
+
+            try
+            {
+                Convert.FromBase64String(base64);
+                return true;
+            }
+            catch (FormatException)
+            {
+                return false;
             }
         }
     }
