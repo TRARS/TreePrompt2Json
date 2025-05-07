@@ -22,7 +22,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
     partial class PromptEditorVM : ObservableObject, IContentVM
     {
         [ObservableProperty]
-        private bool fullMode = true;
+        private bool fullMode;
 
         [ObservableProperty]
         private string title = "PromptEditor";
@@ -1027,7 +1027,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
         /// <summary>
         /// 反序列化
         /// </summary>
-        private void DeserializeTreeStructureForTVN(int depth, ToggleTreeViewNode parent_node, JsonElement element, string indent = "", JsonValueKind parent_kind = JsonValueKind.Undefined)
+        private void DeserializeTreeStructureForTVN(int depth, ToggleTreeViewNode parent_node, JsonElement element, string indent = "")
         {
             var isRoot = depth == 0; depth++;
 
@@ -1044,7 +1044,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
                             JsonKey = $"{property.Name}",
                             JsonValue = string.Empty
                         };
-                        DeserializeTreeStructureForTVN(depth, child_node, property.Value, indent + "  ", element.ValueKind);
+                        DeserializeTreeStructureForTVN(depth, child_node, property.Value, indent + "  ");
                         parent_node.Add(child_node);
                         //Debug.WriteLine($"{indent} {child_node.JsonKey}:{child_node.JsonValue}");
 
@@ -1059,28 +1059,29 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
                     break;
 
                 case JsonValueKind.Array:
-                    if (parent_kind is JsonValueKind.Array) { }
                     parent_node.Enable = false;
-                    if (isRoot || parent_kind is not JsonValueKind.Object)
+                    foreach (JsonElement item in element.EnumerateArray())
                     {
-                        foreach (JsonElement item in element.EnumerateArray())
+                        if (item.ValueKind == JsonValueKind.Object || item.ValueKind == JsonValueKind.Array)
                         {
                             var child_node = new ToggleTreeViewNode()
                             {
                                 Enable = true,
-                                JsonKey = "", //$"item",
+                                JsonKey = "",
                                 JsonValue = string.Empty
                             };
-                            DeserializeTreeStructureForTVN(depth, child_node, item, indent + "  ", element.ValueKind);
+                            DeserializeTreeStructureForTVN(depth, child_node, item, indent + "  ");
                             parent_node.Add(child_node);
-                            //Debug.WriteLine($"{indent} {child_node.JsonKey}:{child_node.JsonValue}");
                         }
-                    }
-                    else
-                    {
-                        foreach (JsonElement item in element.EnumerateArray())
+                        else
                         {
-                            DeserializeTreeStructureForTVN(depth, parent_node, item, indent + "  ", element.ValueKind);
+                            // 直接加到父节点，不包一层
+                            parent_node.Add(new ToggleTreeViewNode()
+                            {
+                                Enable = false,
+                                JsonKey = "",
+                                JsonValue = item.ToString()  // 你可以根据类型精细化处理
+                            });
                         }
                     }
                     break;
