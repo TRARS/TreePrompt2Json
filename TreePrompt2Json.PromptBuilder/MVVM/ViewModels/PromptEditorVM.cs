@@ -68,6 +68,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
         private IStringEncryptorService _stringEncryptorService;
 
         private PromptEditorSettings _config = new();
+        private TvnJsonConverter _helper = new();
 
         private const string TextIcon = @"M909.3 269.3L658.8 18.8C646.7 6.7 630.5 0 613.5 0H144c-26.5 0-48 21.5-48 48v264c0 4.4-3.6 8-8 8H16c-8.8 0-16 7.2-16 16v544c0 8.8 7.2 16 16 16h80c0 35.3 14.3 67.3 37.5 90.5 23.2 23.2 55.2 37.5 90.5 37.5h656c26.5 0 48-21.5 48-48V314.5c0-17-6.7-33.2-18.7-45.2zM704 154.5l69.5 69.5H708c-2.2 0-4-1.8-4-4v-65.5zM188.5 527.1v-46.8h210.3v46.8h-76.6v221.5h-57.3V527.1h-76.4zM864 952c0 4.4-3.6 8-8 8H224c-35.3 0-64-28.7-64-64h400c8.8 0 16-7.2 16-16V336c0-8.8-7.2-16-16-16H168c-4.4 0-8-3.6-8-8V72c0-4.4 3.6-8 8-8h408c35.3 0 64 28.6 64 64v144c0 8.8 7.2 16 16 16h144c35.3 0 64 28.6 64 64v600z
                                           M796 512H628c-2.2 0-4-1.8-4-4v-56c0-2.2 1.8-4 4-4h168c2.2 0 4 1.8 4 4v56c0 2.2-1.8 4-4 4zM796 640H628c-2.2 0-4-1.8-4-4v-56c0-2.2 1.8-4 4-4h168c2.2 0 4 1.8 4 4v56c0 2.2-1.8 4-4 4zM796 768H628c-2.2 0-4-1.8-4-4v-56c0-2.2 1.8-4 4-4h168c2.2 0 4 1.8 4 4v56c0 2.2-1.8 4-4 4z";
@@ -179,13 +180,14 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
                         using (JsonDocument doc = JsonDocument.Parse(content))
                         {
                             var root = new ToggleTreeViewNode() { UseDelayRender = true, ContentRenderType = ContentRenderType.ForJsonEditor, Enable = true, JsonKey = "Root" };
-                            DeserializeTreeStructureForTVN(0, root, doc.RootElement);
+                            _helper.DeserializeTreeStructureForTVN(0, root, doc.RootElement);
                             if (root.HasChildren)
                             {
                                 var firstNode = root.Children.Count == 1 ? root[0] : root;
-                                this.PromptPacketList.Add(new PromptPacket(JsonIcon, firstNode.JsonKey, firstNode));
+                                this.PromptPacketList.Add(CreatePromptPacket(JsonIcon, firstNode.JsonKey, firstNode));
                             }
-                        };
+                        }
+                        ;
                     }
                     catch (Exception ex)
                     {
@@ -208,17 +210,11 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
                                         byte[] bytes = Convert.FromBase64String(content);
                                         string decodedText = Encoding.UTF8.GetString(bytes);
 
-                                        this.PromptPacketList.Add(new PromptPacket(JsonIcon, "text", new PromptString()
-                                        {
-                                            Text = decodedText
-                                        }));
+                                        this.PromptPacketList.Add(CreatePromptPacket(JsonIcon, "text", CreatePromptString(decodedText)));
                                     }
                                     else
                                     {
-                                        this.PromptPacketList.Add(new PromptPacket(JsonIcon, "text", new PromptString()
-                                        {
-                                            Text = $"{content}"
-                                        }));
+                                        this.PromptPacketList.Add(CreatePromptPacket(JsonIcon, "text", CreatePromptString($"{content}")));
                                     }
 
                                     isPngText = true;
@@ -229,10 +225,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
                         // 原样添加
                         if (isPngText is false)
                         {
-                            this.PromptPacketList.Add(new PromptPacket(TextIcon, "text", new PromptString()
-                            {
-                                Text = $"{content}"
-                            }));
+                            this.PromptPacketList.Add(CreatePromptPacket(TextIcon, "text", CreatePromptString($"{content}")));
                         }
 
                         Debug.WriteLine($"{ex.Message}");
@@ -295,7 +288,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
         private void OnAddJsonPrompt()
         {
             this.Print(true, " OnAddJsonPrompt");
-            this.PromptPacketList.Add(new PromptPacket(JsonIcon, "json", new ToggleTreeViewNode()
+            this.PromptPacketList.Add(CreatePromptPacket(JsonIcon, "json", new ToggleTreeViewNode()
             {
                 Enable = true,
                 Text = "Root",
@@ -310,10 +303,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
         private void OnAddTxtPrompt()
         {
             this.Print(true, " OnAddTxtPrompt");
-            this.PromptPacketList.Add(new PromptPacket(TextIcon, "text", new PromptString()
-            {
-                Text = "text",
-            }));
+            this.PromptPacketList.Add(CreatePromptPacket(TextIcon, "text", CreatePromptString("text")));
         }
 
         /// <summary>
@@ -685,21 +675,19 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
                         using (JsonDocument doc = JsonDocument.Parse(temp))
                         {
                             var root = new ToggleTreeViewNode() { UseDelayRender = true, ContentRenderType = ContentRenderType.ForJsonEditor, Enable = true, JsonKey = "Root" };
-                            DeserializeTreeStructureForTVN(0, root, doc.RootElement);
+                            _helper.DeserializeTreeStructureForTVN(0, root, doc.RootElement);
                             if (root.HasChildren)
                             {
                                 var firstNode = root.Children.Count == 1 ? root[0] : root;
-                                this.PromptPacketList.Add(new PromptPacket(JsonIcon, firstNode.JsonKey, firstNode));
+                                this.PromptPacketList.Add(CreatePromptPacket(JsonIcon, firstNode.JsonKey, firstNode));
                             }
-                        };
+                        }
+                        ;
                     }
                     catch (Exception ex)
                     {
                         // 序列化失败视为 string
-                        this.PromptPacketList.Add(new PromptPacket(TextIcon, "text", new PromptString()
-                        {
-                            Text = $"{temp}"
-                        }));
+                        this.PromptPacketList.Add(CreatePromptPacket(TextIcon, "text", CreatePromptString($"{temp}")));
                         Debug.WriteLine($"{ex.Message}");
                     }
                 }
@@ -724,7 +712,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
                     {
                         response = content;
                     }
-                    this.PromptPacketList2.Add(new PromptPacket(TextIcon, "接续词", new PromptString() { Text = response }));
+                    this.PromptPacketList2.Add(CreatePromptPacket(TextIcon, "接续词", CreatePromptString(response)));
                 }
 
             });
@@ -837,163 +825,6 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
             }
         }
 
-        /// <summary>
-        /// 序列化预备
-        /// </summary>
-        private object GenerateTreeStructureFromTVN(ToggleTreeViewNode parent_node, int depth = 0)
-        {
-            var isRoot = depth == 0;
-
-            depth++;
-
-            // 没有子节点时，用 Value 作为值
-            if (parent_node.Children == null || parent_node.Children.Count == 0) { return parent_node.JsonValue; }
-
-            // 待操作列表
-            var childrenList = parent_node.Children.OfType<GateNode>().Where(node => node.Type == GateNodeType.GateBase);
-
-            // 父节点ON  -> 返回字典 Dictionary<string, object>
-            // 父节点OFF -> 返回列表 List<object>
-            var useListOfObject = parent_node.IsChecked;
-
-            // 转换为 字典 Dictionary<string, object>
-            if (useListOfObject)
-            {
-                // 容器
-                var result = new Dictionary<string, object>();
-                // 字典用于记录当前层的名称及其出现次数
-                var nameCount = new Dictionary<string, int>();
-
-                // 第一阶段：生成唯一的 Name
-                foreach (var node in childrenList)
-                {
-                    var item = (ToggleTreeViewNode)node.Content;
-
-                    // 重名处理
-                    var newJsonKey = item.JsonKey;
-                    // 确保字典中有当前名称的计数
-                    if (!nameCount.ContainsKey(newJsonKey))
-                    {
-                        nameCount[newJsonKey] = 0;
-                    }
-                    else
-                    {
-                        nameCount[newJsonKey]++;// 如果已经存在，增加计数
-                    }
-                    // 为名称添加后缀
-                    newJsonKey = $"{newJsonKey}{nameCount[newJsonKey]}";
-
-                    // 下一层
-                    var value = GenerateTreeStructureFromTVN(item, depth);
-
-                    // 写入字典
-                    if (!result.ContainsKey(newJsonKey))
-                    {
-                        result[newJsonKey] = value;
-                    }
-                }
-
-                // 第二阶段：移除绝无仅有的 Key 的序号
-                foreach (var kvp in nameCount.Where(kvp => kvp.Value == 0).ToList())
-                {
-                    var newResultKey = kvp.Key;
-                    var oldResultKey = kvp.Key + kvp.Value;
-                    var oldResultValue = result[oldResultKey];
-                    if (string.IsNullOrWhiteSpace(newResultKey)) { newResultKey = oldResultKey; }
-                    result.Remove(oldResultKey);
-                    result.Add(newResultKey, oldResultValue);
-                }
-
-                //
-                return isRoot ? new Dictionary<string, object>() { { parent_node.JsonKey, result } } : result;
-                //return (isRoot && !string.IsNullOrWhiteSpace(parent_node.JsonKey)) ? new Dictionary<string, object>() { { parent_node.JsonKey, result } } : result;
-            }
-
-            // 转换为 列表 List<object>
-            else
-            {
-                // 子无key = 子返回jsonValue
-                // 子有key = 子返回Dictionary<string, object>
-                var objectList = new List<object>();
-
-                // 容器
-                var result = new Dictionary<string, object>();
-                // 字典用于记录当前层的名称及其出现次数
-                var nameCount = new Dictionary<string, int>();
-
-                // 第零阶段：声明变量
-                var emptyKeyIndex = 0;
-                var emptyKeyPrefix = "vQ$3ju6W$5YV%rpxkRWSMk5A3@2z&hB4";
-
-                // 第一阶段：生成唯一的 Name
-                foreach (var node in childrenList)
-                {
-                    var item = (ToggleTreeViewNode)node.Content;
-
-                    // 重名处理
-                    var newJsonKey = item.JsonKey;
-                    // 判断空白Key
-                    var isEmptyKey = string.IsNullOrWhiteSpace(newJsonKey);
-                    // 确保字典中有当前名称的计数（跳过空白Key）
-                    if (isEmptyKey is false)
-                    {
-                        if (!nameCount.ContainsKey(newJsonKey))
-                        {
-                            nameCount[newJsonKey] = 0;
-                        }
-                        else
-                        {
-                            nameCount[newJsonKey]++;// 如果已经存在，增加计数
-                        }
-
-                        // 为名称添加后缀
-                        newJsonKey = $"{newJsonKey}{nameCount[newJsonKey]}";
-                    }
-                    // 确保用于EmptyKey的字符串仅限前缀相同
-                    if (isEmptyKey) { newJsonKey = emptyKeyPrefix + $"_{emptyKeyIndex++}"; }
-
-                    // 下一层
-                    var value = GenerateTreeStructureFromTVN(item, depth);
-
-                    // 写入字典
-                    if (!result.ContainsKey(newJsonKey))
-                    {
-                        result[newJsonKey] = value;
-                    }
-                }
-
-                // 第二阶段：移除绝无仅有的 Key 的序号
-                foreach (var kvp in nameCount.Where(kvp => kvp.Value == 0).ToList())
-                {
-                    var newResultKey = kvp.Key;
-                    var oldResultKey = kvp.Key + kvp.Value;
-                    var oldResultValue = result[oldResultKey];
-                    if (string.IsNullOrWhiteSpace(newResultKey)) { newResultKey = oldResultKey; }
-                    result.Remove(oldResultKey);
-                    result.Add(newResultKey, oldResultValue);
-                }
-
-                // 第三阶段：写入列表
-                foreach (var x in result)
-                {
-                    if (x.Key.StartsWith(emptyKeyPrefix))
-                    {
-                        objectList.Add(x.Value);
-                    }
-                    else
-                    {
-                        objectList.Add(new Dictionary<string, object>() { { x.Key, x.Value }, });
-                    }
-                }
-
-                // 返回
-                return isRoot ? new Dictionary<string, object>() { { parent_node.JsonKey, objectList } } : objectList;
-                //return (isRoot && !string.IsNullOrWhiteSpace(parent_node.JsonKey)) ? new Dictionary<string, object>() { { parent_node.JsonKey, objectList } } : objectList;
-            }
-
-            // 无法抵达的
-            throw new NotImplementedException();
-        }
 
         /// <summary>
         /// <para><see cref="ObservableCollection&lt;IPromptPacket&gt;"/> -> <see cref="string"/>[]</para>
@@ -1024,90 +855,6 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
             return tempList.ToArray();
         }
 
-        /// <summary>
-        /// 反序列化
-        /// </summary>
-        private void DeserializeTreeStructureForTVN(int depth, ToggleTreeViewNode parent_node, JsonElement element, string indent = "")
-        {
-            var isRoot = depth == 0; depth++;
-
-            switch (element.ValueKind)
-            {
-                case JsonValueKind.Object:
-                    var count = element.EnumerateObject().Count();
-                    foreach (JsonProperty property in element.EnumerateObject())
-                    {
-                        //Debug.WriteLine($"A-{indent}{property.Name}:");
-                        var child_node = new ToggleTreeViewNode()
-                        {
-                            Enable = true,
-                            JsonKey = $"{property.Name}",
-                            JsonValue = string.Empty
-                        };
-                        DeserializeTreeStructureForTVN(depth, child_node, property.Value, indent + "  ");
-                        parent_node.Add(child_node);
-                        //Debug.WriteLine($"{indent} {child_node.JsonKey}:{child_node.JsonValue}");
-
-                        // 简化单个成员的情况
-                        if (child_node.GateBaseList.Count == 1 && !child_node.GateBaseList[0].HasChildren)
-                        {
-                            child_node.JsonValue = child_node.GateBaseList[0].JsonValue;
-                            child_node.Children.Clear();
-                            //Debug.WriteLine($"{child_node.GateBaseList}");
-                        }
-                    }
-                    break;
-
-                case JsonValueKind.Array:
-                    parent_node.Enable = false;
-                    foreach (JsonElement item in element.EnumerateArray())
-                    {
-                        if (item.ValueKind == JsonValueKind.Object || item.ValueKind == JsonValueKind.Array)
-                        {
-                            var child_node = new ToggleTreeViewNode()
-                            {
-                                Enable = true,
-                                JsonKey = "",
-                                JsonValue = string.Empty
-                            };
-                            DeserializeTreeStructureForTVN(depth, child_node, item, indent + "  ");
-                            parent_node.Add(child_node);
-                        }
-                        else
-                        {
-                            // 直接加到父节点，不包一层
-                            parent_node.Add(new ToggleTreeViewNode()
-                            {
-                                Enable = false,
-                                JsonKey = "",
-                                JsonValue = item.ToString()  // 你可以根据类型精细化处理
-                            });
-                        }
-                    }
-                    break;
-
-                case JsonValueKind.String:
-                    parent_node.Add(new ToggleTreeViewNode() { Enable = false, JsonKey = "", JsonValue = $"{element.GetString()}" });
-                    break;
-
-                case JsonValueKind.Number:
-                    parent_node.Add(new ToggleTreeViewNode() { Enable = false, JsonKey = "", JsonValue = $"{element.GetRawText()}" });
-                    break;
-
-                case JsonValueKind.True:
-                case JsonValueKind.False:
-                    parent_node.Add(new ToggleTreeViewNode() { Enable = false, JsonKey = "", JsonValue = $"{element.GetBoolean()}" });
-                    break;
-
-                case JsonValueKind.Null:
-                    parent_node.Add(new ToggleTreeViewNode() { Enable = false, JsonKey = "", JsonValue = $"" });
-                    break;
-
-                default:
-                    Debug.WriteLine($"{indent}Unsupported value type");
-                    break;
-            }
-        }
 
         /// <summary>
         /// 创建JSON提示词（专用节点）
@@ -1140,10 +887,77 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
         /// </summary>
         private PromptString CreatePS(string text)
         {
+            return CreatePromptString(this.FullMode ? text : string.Empty);
+        }
+
+        /// <summary>
+        /// 创建 PromptString
+        /// </summary>
+        private PromptString CreatePromptString(string text = "")
+        {
             return new PromptString()
             {
-                Text = this.FullMode ? text : string.Empty
+                Text = text,
             };
+        }
+
+        /// <summary>
+        /// 创建 PromptPacket
+        /// </summary>
+        private PromptPacket CreatePromptPacket(string icon, string text, object content, bool isChecked = false)
+        {
+            var promptPacket = new PromptPacket(icon, text, content);
+            promptPacket.SetSwapAction(() =>
+            {
+                switch (promptPacket.PromptContent)
+                {
+                    // 如果是 ps 则转为 tvn
+                    case PromptString ps:
+                        {
+                            try
+                            {
+                                // 尝试反序列化为 ToggleTreeViewNode 嵌套
+                                using (JsonDocument doc = JsonDocument.Parse(ps.Text))
+                                {
+                                    var root = new ToggleTreeViewNode() { UseDelayRender = true, ContentRenderType = ContentRenderType.ForJsonEditor, Enable = true, JsonKey = "Root" };
+                                    _helper.DeserializeTreeStructureForTVN(0, root, doc.RootElement);
+                                    if (root.HasChildren)
+                                    {
+                                        var firstNode = root.Children.Count == 1 ? root[0] : root;
+                                        firstNode.ToPS = promptPacket.SwapPsTvn; //设置回调，以便再次转为PS
+                                        promptPacket.PromptContent = firstNode;
+                                        Debug.WriteLine("ChangeToTVN OK");
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine($"ChangeToTVN Failed: {ex.Message}");
+                            }
+                            break;
+                        }
+
+                    // 如果是 tvn 则转为 ps
+                    case ToggleTreeViewNode tvn:
+                        {
+                            try
+                            {
+                                var obj = CreatePromptString(RootNodeTrim(tvn).Trim());
+                                obj.ToTVN = promptPacket.SwapPsTvn; //设置回调，以便再次转为TVN
+                                promptPacket.PromptContent = obj;
+                                Debug.WriteLine("ChangeToPS OK");
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine($"ChangeToPromptString Failed: {ex.Message}");
+                            }
+                            break;
+                        }
+                }
+            });
+            promptPacket.IsChecked = isChecked;
+
+            return promptPacket;
         }
 
         /// <summary>
@@ -1209,16 +1023,16 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
         /// <returns></returns>
         private string RootNodeTrim(ToggleTreeViewNode rootNode)
         {
-            var rootObj = GenerateTreeStructureFromTVN(rootNode);
+            var rootObj = _helper.GenerateTreeStructureFromTVN(rootNode);
+            var options = this.UseJsonl ? jsonlOptions : jsonOptions; // to Json/Jsonl
 
-            // to Json/Jsonl
             if (rootObj is Dictionary<string, object> obj && string.IsNullOrWhiteSpace(obj.Keys.First()))
             {
-                return (JsonSerializer.Serialize(obj.Values.First(), this.UseJsonl ? jsonlOptions : jsonOptions) + "");
+                return (JsonSerializer.Serialize(obj.Values.First(), options) + "");
             }
             else
             {
-                return (JsonSerializer.Serialize(rootObj, this.UseJsonl ? jsonlOptions : jsonOptions) + "");
+                return (JsonSerializer.Serialize(rootObj, options) + "");
             }
         }
 
@@ -1319,5 +1133,4 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
             }
         }
     }
-
 }

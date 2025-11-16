@@ -26,6 +26,8 @@ namespace TreePrompt2Json.MVVM.ViewModels
         };
 
         [ObservableProperty]
+        private bool isAnimationEnabled;
+        [ObservableProperty]
         private Brush brushColor;
         [ObservableProperty]
         private double width;

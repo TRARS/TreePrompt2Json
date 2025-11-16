@@ -1,13 +1,26 @@
-﻿using TrarsUI.Shared.DTOs;
+﻿using System.Text.Json;
+using System.Text.RegularExpressions;
+using TrarsUI.Shared.DTOs;
+using TreePrompt2Json.PromptBuilder.MVVM.ViewModels.PartialFunc.PublicBuild.TemplateCreater;
 
 namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
 {
-#if !PUBLIC_BUILD
+#if PUBLIC_BUILD // 防误裁剪
     partial class PromptEditorVM
     {
-        // 用于防止 Debug 构建时 命名空间 被裁剪
-        static readonly Type[] _ = {
+        static readonly Type[] _publicBuild = {
+            typeof(Regex),
+            typeof(JsonDocument),
+        };
+    }
+#else
+    partial class PromptEditorVM
+    {
+        static readonly Type[] _publicBuild = {
             typeof(AlertProxy),
+            typeof(CharacterTemplate),
+            typeof(Regex),
+            typeof(JsonDocument),
         };
     }
 #endif
@@ -15,15 +28,21 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
 #if PUBLIC_BUILD
     partial class PromptEditorVM
     {
+        CharacterTemplate characterTemplate = new();
+
         private partial void CreateTemplate(bool autoSelect = true)
         {
-            var charA = CreateCharacterA();
+            var charA = characterTemplate.GetPrompt(CharacterTemplate.CharacterIdx.charA);
+            var charB = characterTemplate.GetPrompt(CharacterTemplate.CharacterIdx.charB);
+            var charC = characterTemplate.GetPrompt(CharacterTemplate.CharacterIdx.charC);
 
             ClearAllPromptPacketList();
 
             this.PromptPacketList = new()
             {
-                new PromptPacket(JsonIcon, "角色设定A", charA) { IsChecked = autoSelect },
+                CreatePromptPacket(JsonIcon, "charA", charA, isChecked: autoSelect),
+                CreatePromptPacket(JsonIcon, "charB", charB),
+                CreatePromptPacket(JsonIcon, "charC", charC),
             };
 
             this.PromptPacketList2 = new()
@@ -36,94 +55,13 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
     // 生成默认提示词
     partial class PromptEditorVM
     {
-        private partial PromptString CreateStart()
-        {
-            return new();
-        }
         private partial ToggleTreeViewNode CreateSystemRule()
         {
             return new();
         }
         private partial ToggleTreeViewNode CreateCharacterA()
         {
-            var gate = new ToggleTreeViewNode() { Text = "角色设定", Enable = true, UseDelayRender = true, ContentRenderType = ContentRenderType.ForJsonEditor };
-            gate.Add(CreateTVN("character"));
-            gate[0].Add(CreateTVN("name")); currentGate.JsonValue = "";
-            gate[0].Add(CreateTVN("age")); currentGate.JsonValue = "";
-            gate[0].Add(CreateTVN("race")); currentGate.JsonValue = "";
-            gate[0].Add(CreateTVN("class")); currentGate.JsonValue = "";
-            gate[0].Add(CreateTVN("epithet")); currentGate.JsonValue = "";
-            gate[0].Add(CreateTVN("appearance"));
-            gate[0][5].Add(CreateTVN("general")); currentGate.JsonValue = "";
-            gate[0][5].Add(CreateTVN("unique")); currentGate.JsonValue = "";
-            gate[0].Add(CreateTVN("body"));
-            gate[0][6].Add(CreateTVN("height")); currentGate.JsonValue = "";
-            gate[0][6].Add(CreateTVN("weight")); currentGate.JsonValue = "";
-            gate[0][6].Add(CreateTVN("figure")); currentGate.JsonValue = "";
-            gate[0].Add(CreateTVN("clothing"));
-            gate[0][7].Add(CreateTVN("regular"));
-            gate[0][7][0].Add(CreateTVN("general")); currentGate.JsonValue = "";
-            gate[0][7][0].Add(CreateTVN("details"));
-            gate[0][7][0][1].Add(CreateTVN("dress")); currentGate.JsonValue = "";
-            gate[0][7][0][1].Add(CreateTVN("bra")); currentGate.JsonValue = "";
-            gate[0][7][0][1].Add(CreateTVN("panties")); currentGate.JsonValue = "";
-            gate[0][7].Add(CreateTVN("intimate"));
-            gate[0][7][1].Add(CreateTVN("general")); currentGate.JsonValue = "";
-            gate[0][7][1].Add(CreateTVN("details"));
-            gate[0][7][1][1].Add(CreateTVN("nightgown")); currentGate.JsonValue = "";
-            gate[0][7][1][1].Add(CreateTVN("bra")); currentGate.JsonValue = "";
-            gate[0][7][1][1].Add(CreateTVN("panties")); currentGate.JsonValue = "";
-            gate[0][7].Add(CreateTVN("battle")); currentGate.JsonValue = "";
-            gate[0][7].Add(CreateTVN("travel")); currentGate.JsonValue = "";
-            gate[0][7].Add(CreateTVN("formal_gown")); currentGate.JsonValue = "";
-            gate[0].Add(CreateTVN("voice")); currentGate.JsonValue = "";
-            gate[0].Add(CreateTVN("personality"));
-            gate[0][9].Add(CreateTVN("general")); currentGate.JsonValue = "";
-            gate[0][9].Add(CreateTVN("sexual"));
-            gate[0][9][1].Add(CreateTVN("preferences", false));
-            gate[0][9][1][0].Add(CreateTVN("", false)); currentGate.JsonValue = "";
-            gate[0][9][1][0].Add(CreateTVN("", false)); currentGate.JsonValue = "";
-            gate[0][9][1][0].Add(CreateTVN("", false)); currentGate.JsonValue = "";
-            gate[0][9][1][0].Add(CreateTVN("", false)); currentGate.JsonValue = "";
-            gate[0][9][1].Add(CreateTVN("reactions"));
-            gate[0][9][1][1].Add(CreateTVN("physical"));
-            gate[0][9][1][1][0].Add(CreateTVN("ears")); currentGate.JsonValue = "";
-            gate[0][9][1][1][0].Add(CreateTVN("neck")); currentGate.JsonValue = "";
-            gate[0][9][1][1][0].Add(CreateTVN("breasts")); currentGate.JsonValue = "";
-            gate[0][9][1][1][0].Add(CreateTVN("vulva_arousal")); currentGate.JsonValue = "";
-            gate[0][9][1][1][0].Add(CreateTVN("climax")); currentGate.JsonValue = "";
-            gate[0][9][1][1][0].Add(CreateTVN("afterglow")); currentGate.JsonValue = "";
-            gate[0][9][1][1].Add(CreateTVN("emotional"));
-            gate[0][9][1][1][1].Add(CreateTVN("initial")); currentGate.JsonValue = "";
-            gate[0][9][1][1][1].Add(CreateTVN("foreplay")); currentGate.JsonValue = "";
-            gate[0][9][1][1][1].Add(CreateTVN("intercourse")); currentGate.JsonValue = "";
-            gate[0][9][1][1][1].Add(CreateTVN("climax")); currentGate.JsonValue = "";
-            gate[0][9][1][1][1].Add(CreateTVN("afterglow")); currentGate.JsonValue = "";
-            gate[0].Add(CreateTVN("physiology"));
-            gate[0][10].Add(CreateTVN("vulva"));
-            gate[0][10][0].Add(CreateTVN("entrance")); currentGate.JsonValue = "";
-            gate[0][10][0].Add(CreateTVN("mons_pubis")); currentGate.JsonValue = "";
-            gate[0][10][0].Add(CreateTVN("clitoris")); currentGate.JsonValue = "";
-            gate[0][10][0].Add(CreateTVN("labia_minora")); currentGate.JsonValue = "";
-            gate[0][10][0].Add(CreateTVN("labia_majora")); currentGate.JsonValue = "";
-            gate[0][10][0].Add(CreateTVN("pubes")); currentGate.JsonValue = "";
-            gate[0][10][0].Add(CreateTVN("hymen")); currentGate.JsonValue = "";
-            gate[0][10].Add(CreateTVN("vaginal")); currentGate.JsonValue = "";
-            gate[0][10].Add(CreateTVN("uterus")); currentGate.JsonValue = "";
-            gate[0][10].Add(CreateTVN("climax")); currentGate.JsonValue = "";
-            gate[0][10].Add(CreateTVN("recovery")); currentGate.JsonValue = "";
-            gate[0].Add(CreateTVN("relationships")); currentGate.JsonValue = "";
-            gate[0].Add(CreateTVN("miscellaneous", false));
-            gate[0][12].Add(CreateTVN("", false)); currentGate.JsonValue = "";
-            gate[0][12].Add(CreateTVN("", false)); currentGate.JsonValue = "";
-            gate[0][12].Add(CreateTVN("", false)); currentGate.JsonValue = "";
-            gate[0][12].Add(CreateTVN("", false)); currentGate.JsonValue = "";
-            gate[0][12].Add(CreateTVN("", false)); currentGate.JsonValue = "";
-            gate[0][12].Add(CreateTVN("", false)); currentGate.JsonValue = "";
-            gate[0][12].Add(CreateTVN("", false)); currentGate.JsonValue = "";
-            gate[0][12].Add(CreateTVN("", false)); currentGate.JsonValue = "";
-
-            return gate;
+            return new();
         }
         private partial ToggleTreeViewNode CreateCharacterB()
         {
@@ -142,6 +80,10 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
             return new();
         }
         private partial ToggleTreeViewNode CreateStory()
+        {
+            return new();
+        }
+        private partial ToggleTreeViewNode CreatePlot()
         {
             return new();
         }

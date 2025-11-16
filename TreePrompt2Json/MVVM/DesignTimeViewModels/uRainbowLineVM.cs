@@ -20,6 +20,7 @@ namespace TreePrompt2Json.MVVM.DesignTimeViewModels
                 new GradientStop((Color)ColorConverter.ConvertFromString("#009fd9"), 0.000),
             }
         };
+        public bool IsAnimationEnabled { get; set; } = false;
         public double Width { get; set; } = double.NaN;
         public double Height { get; set; } = 1;
         public string Token { get; set; }

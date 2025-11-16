@@ -17,8 +17,6 @@ namespace TreePrompt2Json.MVVM.Views
 
         public ChildForm(ITokenProviderService tokenProvider, IDebouncerService debouncer, IStringEncryptorService stringEncryptor)
         {
-            enableShadowLayer = false;
-
             _tokenProvider = tokenProvider;
             _debouncer = debouncer;
             _stringEncryptor = stringEncryptor;

@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.Diagnostics;
+using System.Windows;
 using TrarsUI.Shared.Interfaces;
 using TrarsUI.Shared.Interfaces.UIComponents;
 using TrarsUI.SourceGenerator.Attributes;
@@ -14,15 +15,20 @@ namespace TreePrompt2Json.MVVM.Views
 
         public MainWindow(ITokenProviderService tokenProvider, IDebouncerService debouncer, IStringEncryptorService stringEncryptor)
         {
-            enableShadowLayer = false;
-
             _tokenProvider = tokenProvider;
             _debouncer = debouncer;
             _stringEncryptor = stringEncryptor;
 
             InitializeComponent();
             InitWindowBorderlessBehavior(); // 无边框
-            InitWindowMessageWithToken(); // 注册消息
+            InitWindowMessageWithToken(new WindowMessageConfig()
+            {
+                UseCloseIntercept = true,
+                OnCloseIntercept = () =>
+                {
+                    Debug.WriteLine("OnCloseIntercept triggered");
+                },
+            }); // 注册消息
         }
     }
 }
