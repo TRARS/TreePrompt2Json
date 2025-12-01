@@ -1,11 +1,18 @@
 ﻿using System.Diagnostics;
 using System.Text.Json;
 using TrarsUI.Shared.DTOs;
+using TrarsUI.Shared.Helpers.Enums;
+using TrarsUI.Shared.Helpers.Extensions;
 
 namespace TreePrompt2Json.PromptBuilder.MVVM.Helpers
 {
     internal partial class TvnJsonConverter
     {
+        /// <summary>
+        /// 避免使用，因为会造成更多困扰
+        /// </summary>
+        private bool arrayUp = false;
+
         /// <summary>
         /// 序列化预备
         /// </summary>
@@ -16,7 +23,22 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.Helpers
             depth++;
 
             // 没有子节点时，用 Value 作为值
-            if (parent_node.Children == null || parent_node.Children.Count == 0) { return parent_node.JsonValue; }
+            if (parent_node.Children == null || parent_node.Children.Count == 0)
+            {
+                // 根据JsonValueType返回对应类型
+                return parent_node.JsonValueType switch
+                {
+                    JsonValueType.String => parent_node.JsonValue,
+                    JsonValueType.Number => double.TryParse(parent_node.JsonValue, out var number) ? number : throw new FormatException($"Invalid number literal: '{parent_node.JsonValue.Shorten()}'"),
+                    JsonValueType.Boolean => bool.TryParse(parent_node.JsonValue, out var boolean) ? boolean : throw new FormatException($"Invalid boolean literal: '{parent_node.JsonValue.Shorten()}'"),
+                    JsonValueType.Null => parent_node.JsonValue == "null" ? null! : throw new FormatException($"Invalid null literal: expected 'null', got '{parent_node.JsonValue.Shorten()}'"),
+                    JsonValueType.Object => throw new InvalidOperationException("Should not happen: Object should have children"),
+                    JsonValueType.Array => throw new InvalidOperationException("Should not happen: Array should have children"),
+                    _ => throw new InvalidOperationException("Should not happen: Undefined type")
+                };
+
+                //return parent_node.JsonValue;
+            }
 
             // 待操作列表
             var childrenList = parent_node.Children.OfType<GateNode>().Where(node => node.Type == GateNodeType.GateBase);
@@ -75,7 +97,6 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.Helpers
 
                 //
                 return isRoot ? new Dictionary<string, object>() { { parent_node.JsonKey, result } } : result;
-                //return (isRoot && !string.IsNullOrWhiteSpace(parent_node.JsonKey)) ? new Dictionary<string, object>() { { parent_node.JsonKey, result } } : result;
             }
 
             // 转换为 列表 List<object>
@@ -92,7 +113,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.Helpers
 
                 // 第零阶段：声明变量
                 var emptyKeyIndex = 0;
-                var emptyKeyPrefix = "vQ$3ju6W$5YV%rpxkRWSMk5A3@2z&hB4";
+                var emptyKeyPrefix = Guid.NewGuid().ToString();
 
                 // 第一阶段：生成唯一的 Name
                 foreach (var node in childrenList)
@@ -157,7 +178,6 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.Helpers
 
                 // 返回
                 return isRoot ? new Dictionary<string, object>() { { parent_node.JsonKey, objectList } } : objectList;
-                //return (isRoot && !string.IsNullOrWhiteSpace(parent_node.JsonKey)) ? new Dictionary<string, object>() { { parent_node.JsonKey, objectList } } : objectList;
             }
 
             // 无法抵达的
@@ -167,87 +187,95 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.Helpers
         /// <summary>
         /// 反序列化
         /// </summary>
-        public void DeserializeTreeStructureForTVN(int depth, ToggleTreeViewNode parent_node, JsonElement element, string indent = "")
+        public ToggleTreeViewNode DeserializeTreeStructureForTVN(string json, string rootName = "")
         {
-            var isRoot = depth == 0; depth++;
+            using (var doc = JsonDocument.Parse(json))
+            {
+                var root = BuildNode(rootName, doc.RootElement);
+
+                root.UseDelayRender = true; // 刚需
+                root.ContentRenderType = ContentRenderType.ForJsonEditor; // 刚需
+
+                return root;
+            }
+        }
+        private ToggleTreeViewNode BuildNode(string name, JsonElement element, string indent = "")
+        {
+            var node = new ToggleTreeViewNode { Enable = true, JsonKey = name };
+            var childList = new List<ToggleTreeViewNode>();
 
             switch (element.ValueKind)
             {
                 case JsonValueKind.Object:
-                    var count = element.EnumerateObject().Count();
-                    foreach (JsonProperty property in element.EnumerateObject())
+                    node.Enable = true;
+                    foreach (var prop in element.EnumerateObject())
                     {
-                        //Debug.WriteLine($"A-{indent}{property.Name}:");
-                        var child_node = new ToggleTreeViewNode()
-                        {
-                            Enable = true,
-                            JsonKey = $"{property.Name}",
-                            JsonValue = string.Empty
-                        };
-                        DeserializeTreeStructureForTVN(depth, child_node, property.Value, indent + "  ");
-                        parent_node.Add(child_node);
-                        //Debug.WriteLine($"{indent} {child_node.JsonKey}:{child_node.JsonValue}");
-
-                        // 简化单个成员的情况
-                        if (child_node.GateBaseList.Count == 1 && !child_node.GateBaseList[0].HasChildren)
-                        {
-                            child_node.JsonValue = child_node.GateBaseList[0].JsonValue;
-                            child_node.Children.Clear();
-                            //Debug.WriteLine($"{child_node.GateBaseList}");
-                        }
+                        var next = BuildNode(prop.Name, prop.Value);
+                        childList.Add(next);
                     }
+                    node.AddRange(childList); node.JsonValueType = JsonValueType.Object;
                     break;
 
                 case JsonValueKind.Array:
-                    parent_node.Enable = false;
-                    foreach (JsonElement item in element.EnumerateArray())
+                    node.Enable = false;
+                    foreach (var item in element.EnumerateArray())
                     {
-                        if (item.ValueKind == JsonValueKind.Object || item.ValueKind == JsonValueKind.Array)
+                        var next = BuildNode("", item); // 数组成员 没有key 只有value
+                        childList.Add(next);
+                    }
+
+                    if (arrayUp)
+                    {
+                        foreach (var child in childList)
                         {
-                            var child_node = new ToggleTreeViewNode()
+                            if (child.GateBaseList.Count == 1 && child.GateBaseList[0].GateBaseList.Count == 0)
                             {
-                                Enable = true,
-                                JsonKey = "",
-                                JsonValue = string.Empty
-                            };
-                            DeserializeTreeStructureForTVN(depth, child_node, item, indent + "  ");
-                            parent_node.Add(child_node);
-                        }
-                        else
-                        {
-                            // 直接加到父节点，不包一层
-                            parent_node.Add(new ToggleTreeViewNode()
+                                child.JsonKey = child.GateBaseList[0].JsonKey;
+                                child.JsonValue = child.GateBaseList[0].JsonValue;
+                                child.Children.Clear();
+                            }
+                            if (child.GateBaseList.Count == 1 && child.GateBaseList[0].GateBaseList.Count > 1)
                             {
-                                Enable = false,
-                                JsonKey = "",
-                                JsonValue = item.ToString()  // 你可以根据类型精细化处理
-                            });
+                                Debug.WriteLine($"parent:{node.JsonKey}, child:{child.GateBaseList[0].JsonKey}, children:{child.GateBaseList[0].GateBaseList.Count}");
+
+                                child.JsonKey = child.GateBaseList[0].JsonKey;
+                                child.JsonValue = "";
+
+                                var temp = new List<ToggleTreeViewNode>();
+                                foreach (var bk in child.GateBaseList[0].GateBaseList)
+                                {
+                                    temp.Add(bk);
+                                }
+                                child.Children.Clear();
+                                child.AddRange(temp, true);
+                            }
                         }
                     }
+
+                    node.AddRange(childList); node.JsonValueType = JsonValueType.Array;
                     break;
 
                 case JsonValueKind.String:
-                    parent_node.Add(new ToggleTreeViewNode() { Enable = false, JsonKey = "", JsonValue = $"{element.GetString()}" });
+                    node.Enable = true; node.JsonValue = $"{element.GetString()}"; node.JsonValueType = JsonValueType.String;
                     break;
 
                 case JsonValueKind.Number:
-                    parent_node.Add(new ToggleTreeViewNode() { Enable = false, JsonKey = "", JsonValue = $"{element.GetRawText()}" });
+                    node.Enable = true; node.JsonValue = element.GetRawText(); node.JsonValueType = JsonValueType.Number;
                     break;
 
                 case JsonValueKind.True:
+                    node.Enable = true; node.JsonValue = element.GetRawText(); node.JsonValueType = JsonValueType.Boolean;
+                    break;
                 case JsonValueKind.False:
-                    parent_node.Add(new ToggleTreeViewNode() { Enable = false, JsonKey = "", JsonValue = $"{element.GetBoolean()}" });
+                    node.Enable = true; node.JsonValue = element.GetRawText(); node.JsonValueType = JsonValueType.Boolean;
                     break;
 
                 case JsonValueKind.Null:
-                    parent_node.Add(new ToggleTreeViewNode() { Enable = false, JsonKey = "", JsonValue = $"" });
-                    break;
-
-                default:
-                    Debug.WriteLine($"{indent}Unsupported value type");
+                    node.Enable = true; node.JsonValue = "null"; node.JsonValueType = JsonValueType.Null;
                     break;
             }
-        }
 
+            return node;
+        }
     }
 }

@@ -62,7 +62,7 @@ namespace TreePrompt2Json.MVVM.ViewModels
             WeakReferenceMessenger.Default.Register<DialogYesNoMessage, string>(this, token, (r, m) =>
             {
                 m.Reply(dialogYesNo.ShowDialog(
-                    m,
+                    new DialogPacket(m.Message),
                     () => { TaskCompletionSource = new(); return TaskCompletionSource; },
                     dp => { this.DialogMessageList.Remove(dp); },
                     dp => { this.DialogMessageList.Add(dp); }));

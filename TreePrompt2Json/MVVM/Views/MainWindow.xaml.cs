@@ -24,9 +24,9 @@ namespace TreePrompt2Json.MVVM.Views
             InitWindowMessageWithToken(new WindowMessageConfig()
             {
                 UseCloseIntercept = true,
-                OnCloseIntercept = () =>
+                OnCloseIntercept = (x) =>
                 {
-                    Debug.WriteLine("OnCloseIntercept triggered");
+                    Debug.WriteLine($"OnCloseIntercept YesNo: {x}");
                 },
             }); // 注册消息
         }

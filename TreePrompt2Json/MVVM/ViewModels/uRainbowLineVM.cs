@@ -1,7 +1,9 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Messaging;
 using System.Windows.Media;
 using TrarsUI.Shared.Interfaces;
 using TrarsUI.Shared.Interfaces.UIComponents;
+using TrarsUI.Shared.Messages;
 
 namespace TreePrompt2Json.MVVM.ViewModels
 {
@@ -43,6 +45,17 @@ namespace TreePrompt2Json.MVVM.ViewModels
             this.BrushColor = defBrush;
             this.Width = double.NaN;
             this.Height = 1;
+        }
+    }
+
+    partial class uRainbowLineVM
+    {
+        partial void OnTokenChanged(string value)
+        {
+            WeakReferenceMessenger.Default.Register<WindowActivationUpdateMessage, string>(this, value, (r, m) =>
+            {
+                this.IsAnimationEnabled = m.Value.IsActive; // 动画启停
+            });
         }
     }
 }

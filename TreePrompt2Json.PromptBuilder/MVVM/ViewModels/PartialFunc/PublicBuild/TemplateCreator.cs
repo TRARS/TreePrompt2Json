@@ -32,22 +32,29 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
 
         private partial void CreateTemplate(bool autoSelect = true)
         {
+            var system = CreateSystemRule();
             var charA = characterTemplate.GetPrompt(CharacterTemplate.CharacterIdx.charA);
             var charB = characterTemplate.GetPrompt(CharacterTemplate.CharacterIdx.charB);
             var charC = characterTemplate.GetPrompt(CharacterTemplate.CharacterIdx.charC);
+            var story = CreateStory();
+            var plot = CreatePlot();
+            var @continue = CreateContinuePrompt();
 
             ClearAllPromptPacketList();
 
             this.PromptPacketList = new()
             {
-                CreatePromptPacket(JsonIcon, "charA", charA, isChecked: autoSelect),
-                CreatePromptPacket(JsonIcon, "charB", charB),
-                CreatePromptPacket(JsonIcon, "charC", charC),
+                CreatePromptPacket(JsonIcon, "系统规则", system),
+                CreatePromptPacket(JsonIcon, "角色A", charA, isChecked: autoSelect),
+                CreatePromptPacket(JsonIcon, "角色B", charB),
+                CreatePromptPacket(JsonIcon, "角色C", charC),
+                CreatePromptPacket(JsonIcon, "故事设定", story),
+                CreatePromptPacket(JsonIcon, "故事楔子", plot),
             };
 
             this.PromptPacketList2 = new()
             {
-
+                CreatePromptPacket(TextIcon, "接续词", @continue),
             };
         }
     }
@@ -57,48 +64,33 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
     {
         private partial ToggleTreeViewNode CreateSystemRule()
         {
-            return new();
-        }
-        private partial ToggleTreeViewNode CreateCharacterA()
-        {
-            return new();
-        }
-        private partial ToggleTreeViewNode CreateCharacterB()
-        {
-            return new();
-        }
-        private partial ToggleTreeViewNode CreateCharacterC()
-        {
-            return new();
-        }
-        private partial ToggleTreeViewNode CreateCharacterD()
-        {
-            return new();
-        }
-        private partial ToggleTreeViewNode CreateCharacterE()
-        {
-            return new();
+            return CreateRootNode("SystemRule");
         }
         private partial ToggleTreeViewNode CreateStory()
         {
-            return new();
+            return CreateRootNode("Story");
         }
         private partial ToggleTreeViewNode CreatePlot()
         {
-            return new();
-        }
-        private partial PromptString CreateOutputFormat()
-        {
-            return new();
-        }
-        private partial PromptString CreateEnd()
-        {
-            return new();
+            return CreateRootNode("Plot");
         }
 
         private partial PromptString CreateContinuePrompt()
         {
-            return new();
+            return new() { Text = "ContinuePrompt" };
+        }
+
+        private ToggleTreeViewNode CreateRootNode(string jsonKey)
+        {
+            var root = new ToggleTreeViewNode()
+            {
+                Enable = true,
+                JsonKey = string.Empty,
+                UseDelayRender = true,
+                ContentRenderType = ContentRenderType.ForJsonEditor
+            };
+            root.Add(new ToggleTreeViewNode() { Enable = true, JsonKey = $"{jsonKey}" });
+            return root;
         }
     }
 #endif

@@ -21,9 +21,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.Helpers
 
         public async Task OpenDialog(string msg, string token)
         {
-            Action? yesnoCallback = null;
-            var yesno = await WeakReferenceMessenger.Default.Send(new DialogYesNoMessage(msg, (x) => { yesnoCallback = x; }), token);
-            yesnoCallback?.Invoke();
+            var yesno = await WeakReferenceMessenger.Default.Send(new DialogYesNoMessage(msg), token);
         }
 
         public async Task OpenPromptViewer(PromptString finalOutput)

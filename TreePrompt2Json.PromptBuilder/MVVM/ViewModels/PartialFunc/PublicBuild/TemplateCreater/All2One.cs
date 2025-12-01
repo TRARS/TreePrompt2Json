@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using TrarsUI.Shared.DTOs;
+﻿using TrarsUI.Shared.DTOs;
 using TreePrompt2Json.PromptBuilder.MVVM.Helpers;
 
 namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels.PartialFunc.PublicBuild.TemplateCreater
@@ -16,24 +15,21 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels.PartialFunc.PublicBuild.
                 idx = 0;
             }
 
-            var root = new ToggleTreeViewNode() { UseDelayRender = true, ContentRenderType = ContentRenderType.ForJsonEditor, Enable = true, JsonKey = "Root" };
             try
             {
-                using (JsonDocument doc = JsonDocument.Parse(tempList[idx]))
-                {
-                    _helper.DeserializeTreeStructureForTVN(0, root, doc.RootElement);
-                    if (root.HasChildren)
-                    {
-                        var firstNode = root.Children.Count == 1 ? root[0] : root;
-                        return firstNode;
-                    }
-                }
+                return _helper.DeserializeTreeStructureForTVN(tempList[idx]);
             }
             catch (Exception ex)
             {
-
+                return new ToggleTreeViewNode()
+                {
+                    UseDelayRender = true,
+                    ContentRenderType = ContentRenderType.ForJsonEditor,
+                    Enable = true,
+                    JsonKey = "Error",
+                    JsonValue = $"{ex.Message}"
+                };
             }
-            return root;
         }
         public static string GetTemplateAtString<T>(T index, List<string> tempList)
         {

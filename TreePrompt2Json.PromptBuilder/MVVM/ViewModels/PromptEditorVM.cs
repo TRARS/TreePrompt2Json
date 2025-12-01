@@ -125,7 +125,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
                 Debug.WriteLine("AES Key is invalid. It must be exactly 32 characters.");
             }
 
-            this.Print(true, " OnSaveConfig");
+            this.Print(true, "OnSaveConfig");
         }
         [RelayCommand]
         private void OnLoadConfig()
@@ -142,7 +142,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
 
                 if (string.IsNullOrEmpty(this.DefuaultAesIv)) { this.DefuaultAesIv = _stringEncryptorService.GetInnerAesIv(); }
 
-                this.Print(true, " OnLoadConfig");
+                this.Print(true, "OnLoadConfig");
             });
 
             if (flag is false)
@@ -177,17 +177,18 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
                     try
                     {
                         // 尝试反序列化为 ToggleTreeViewNode 嵌套
-                        using (JsonDocument doc = JsonDocument.Parse(content))
-                        {
-                            var root = new ToggleTreeViewNode() { UseDelayRender = true, ContentRenderType = ContentRenderType.ForJsonEditor, Enable = true, JsonKey = "Root" };
-                            _helper.DeserializeTreeStructureForTVN(0, root, doc.RootElement);
-                            if (root.HasChildren)
-                            {
-                                var firstNode = root.Children.Count == 1 ? root[0] : root;
-                                this.PromptPacketList.Add(CreatePromptPacket(JsonIcon, firstNode.JsonKey, firstNode));
-                            }
-                        }
-                        ;
+                        //using (JsonDocument doc = JsonDocument.Parse(content))
+                        //{
+                        //    var root = new ToggleTreeViewNode() { UseDelayRender = true, ContentRenderType = ContentRenderType.ForJsonEditor, Enable = true, JsonKey = "Root" };
+                        //    _helper.DeserializeTreeStructureForTVN(0, root, doc.RootElement);
+                        //    if (root.HasChildren)
+                        //    {
+                        //        var firstNode = root.Children.Count == 1 ? root[0] : root;
+                        //        this.PromptPacketList.Add(CreatePromptPacket(JsonIcon, firstNode.JsonKey, firstNode));
+                        //    }
+                        //}
+                        var root = _helper.DeserializeTreeStructureForTVN(content);
+                        this.PromptPacketList.Add(CreatePromptPacket(JsonIcon, root.JsonKey, root.JsonValue));
                     }
                     catch (Exception ex)
                     {
@@ -240,15 +241,13 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
         [RelayCommand]
         private async Task OnClearAllPrompt()
         {
-            Action? yesnoCallback = null;
-            if (await WeakReferenceMessenger.Default.Send(new DialogYesNoMessage("ClearAllPrompt ?", (x) => { yesnoCallback = x; }), this.Token))
+            if (await WeakReferenceMessenger.Default.Send(new DialogYesNoMessage("ClearAllPrompt ?"), this.Token))
             {
                 this.PromptPacketList.Clear();
                 this.PromptPacketList2.Clear();
                 //this.FinalOutput.Text = string.Empty;
-                this.Print(true, " OnClear");
+                this.Print(true, "OnClear");
             }
-            yesnoCallback?.Invoke();
         }
 
         /// <summary>
@@ -257,14 +256,12 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
         [RelayCommand]
         private async Task OnReloadFromInternalAsync()
         {
-            Action? yesnoCallback = null;
-            if (await WeakReferenceMessenger.Default.Send(new DialogYesNoMessage("ReloadFromInternal ?", (x) => { yesnoCallback = x; }), this.Token))
+            if (await WeakReferenceMessenger.Default.Send(new DialogYesNoMessage("ReloadFromInternal ?"), this.Token))
             {
                 // 重新载入示例
                 CreateTemplate(false);
-                this.Print(true, " OnReloadFromInternal");
+                this.Print(true, "OnReloadFromInternal");
             }
-            yesnoCallback?.Invoke();
         }
         /// <summary>
         /// 重载于桌面
@@ -272,13 +269,11 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
         [RelayCommand]
         private async Task OnReloadFromDesktopAsync()
         {
-            Action? yesnoCallback = null;
-            if (await WeakReferenceMessenger.Default.Send(new DialogYesNoMessage("ReloadFromDesktop ?", (x) => { yesnoCallback = x; }), this.Token))
+            if (await WeakReferenceMessenger.Default.Send(new DialogYesNoMessage("ReloadFromDesktop ?"), this.Token))
             {
                 OnLoadFromDesktop();
-                this.Print(true, " OnReloadFromDesktop");
+                this.Print(true, "OnReloadFromDesktop");
             }
-            yesnoCallback?.Invoke();
         }
 
         /// <summary>
@@ -287,7 +282,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
         [RelayCommand]
         private void OnAddJsonPrompt()
         {
-            this.Print(true, " OnAddJsonPrompt");
+            this.Print(true, "OnAddJsonPrompt");
             this.PromptPacketList.Add(CreatePromptPacket(JsonIcon, "json", new ToggleTreeViewNode()
             {
                 Enable = true,
@@ -302,7 +297,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
         [RelayCommand]
         private void OnAddTxtPrompt()
         {
-            this.Print(true, " OnAddTxtPrompt");
+            this.Print(true, "OnAddTxtPrompt");
             this.PromptPacketList.Add(CreatePromptPacket(TextIcon, "text", CreatePromptString("text")));
         }
 
@@ -322,7 +317,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
                 if (index > -1)
                 {
                     list.RemoveAt(index);
-                    this.Print(true, $" Remove: {item.PromptContent.GetType().Name}");
+                    this.Print(true, $"Remove: {item.PromptContent.GetType().Name}");
                 }
             });
         }
@@ -401,25 +396,32 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
         [RelayCommand]
         private void OnPrintSelectedItems()
         {
-            var result = new StringBuilder();
-
-            if (UseSeparator) { result.AppendLine(separatorLine); }
-
-            if (SelectedPromptPacket?.PromptContent is PromptString str)
+            try
             {
-                result.AppendLine(str.Text.Trim());
+                var result = new StringBuilder();
+
+                if (UseSeparator) { result.AppendLine(separatorLine); }
+
+                if (SelectedPromptPacket?.PromptContent is PromptString str)
+                {
+                    result.AppendLine(str.Text.Trim());
+                }
+                if (SelectedPromptPacket?.PromptContent is ToggleTreeViewNode node)
+                {
+                    result.AppendLine(RootNodeTrim(node).Trim());
+                }
+
+                result = result.Replace("\\r\\n", "\n");
+
+                var final = result.ToString().Trim();
+                var trimLen = final.Replace("\r", "").Replace("\n", "").Replace(" ", "").Length;
+                this.FinalOutput.Text = final;
+                this.Print(true, $"Prompt Length: {this.FinalOutput.Text.Length}（Trimmed(\\r\\n␣): {trimLen}）");
             }
-            if (SelectedPromptPacket?.PromptContent is ToggleTreeViewNode node)
+            catch (Exception ex)
             {
-                result.AppendLine(RootNodeTrim(node).Trim());
+                this.Print(true, ex.Message);
             }
-
-            result = result.Replace("\\r\\n", "\n");
-
-            var final = result.ToString().Trim();
-            var trimLen = final.Replace("\r", "").Replace("\n", "").Replace(" ", "").Length;
-            this.FinalOutput.Text = final;
-            this.Print(true, $" Prompt Length: {this.FinalOutput.Text.Length}（Trimmed(\\r\\n␣): {trimLen}）");
         }
         /// <summary>
         /// 打印所有项
@@ -427,42 +429,49 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
         [RelayCommand]
         private void OnPrintAllItems()
         {
-            var result = new StringBuilder();
-            foreach (var item in this.PromptPacketList)
+            try
             {
-                var isLast = item == this.PromptPacketList.Last();
-
-                if (item.Unused)
+                var result = new StringBuilder();
+                foreach (var item in this.PromptPacketList)
                 {
-                    Debug.WriteLine($"忽略【{item.ButtonText}】");
-                    continue;
+                    var isLast = item == this.PromptPacketList.Last();
+
+                    if (item.Unused)
+                    {
+                        Debug.WriteLine($"忽略【{item.ButtonText}】");
+                        continue;
+                    }
+
+                    if (UseSeparator) { result.AppendLine(separatorLine); }
+
+                    if (item.PromptContent is PromptString prompt)
+                    {
+                        result.AppendLine(prompt.Text.Trim());
+                        if (isLast is false) { result.AppendLine(); }
+                    }
+                    if (item.PromptContent is ToggleTreeViewNode node)
+                    {
+                        result.AppendLine(RootNodeTrim(node).Trim());
+                        if (isLast is false) { result.AppendLine(); }
+                    }
+
+                    if (UseSeparator && item == this.PromptPacketList.Last())
+                    {
+                        { result.Append(separatorLine); }
+                    }
                 }
 
-                if (UseSeparator) { result.AppendLine(separatorLine); }
+                result = result.Replace("\\r\\n", "\n");
 
-                if (item.PromptContent is PromptString prompt)
-                {
-                    result.AppendLine(prompt.Text.Trim());
-                    if (isLast is false) { result.AppendLine(); }
-                }
-                if (item.PromptContent is ToggleTreeViewNode node)
-                {
-                    result.AppendLine(RootNodeTrim(node).Trim());
-                    if (isLast is false) { result.AppendLine(); }
-                }
-
-                if (UseSeparator && item == this.PromptPacketList.Last())
-                {
-                    { result.Append(separatorLine); }
-                }
+                var final = result.ToString().Trim();
+                var trimLen = final.Replace("\r", "").Replace("\n", "").Replace(" ", "").Length;
+                this.FinalOutput.Text = final;
+                this.Print(true, $"Prompt Length: {this.FinalOutput.Text.Length}（Trimmed(\\r\\n␣): {trimLen}）");
             }
-
-            result = result.Replace("\\r\\n", "\n");
-
-            var final = result.ToString().Trim();
-            var trimLen = final.Replace("\r", "").Replace("\n", "").Replace(" ", "").Length;
-            this.FinalOutput.Text = final;
-            this.Print(true, $" Prompt Length: {this.FinalOutput.Text.Length}（Trimmed(\\r\\n␣): {trimLen}）");
+            catch (Exception ex)
+            {
+                this.Print(true, ex.Message);
+            }
         }
 
         /// <summary>
@@ -672,17 +681,18 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
                     try
                     {
                         // 尝试反序列化为 ToggleTreeViewNode 嵌套
-                        using (JsonDocument doc = JsonDocument.Parse(temp))
-                        {
-                            var root = new ToggleTreeViewNode() { UseDelayRender = true, ContentRenderType = ContentRenderType.ForJsonEditor, Enable = true, JsonKey = "Root" };
-                            _helper.DeserializeTreeStructureForTVN(0, root, doc.RootElement);
-                            if (root.HasChildren)
-                            {
-                                var firstNode = root.Children.Count == 1 ? root[0] : root;
-                                this.PromptPacketList.Add(CreatePromptPacket(JsonIcon, firstNode.JsonKey, firstNode));
-                            }
-                        }
-                        ;
+                        //using (JsonDocument doc = JsonDocument.Parse(temp))
+                        //{
+                        //    var root = new ToggleTreeViewNode() { UseDelayRender = true, ContentRenderType = ContentRenderType.ForJsonEditor, Enable = true, JsonKey = "Root" };
+                        //    _helper.DeserializeTreeStructureForTVN(0, root, doc.RootElement);
+                        //    if (root.HasChildren)
+                        //    {
+                        //        var firstNode = root.Children.Count == 1 ? root[0] : root;
+                        //        this.PromptPacketList.Add(CreatePromptPacket(JsonIcon, firstNode.JsonKey, firstNode));
+                        //    }
+                        //}
+                        var root = _helper.DeserializeTreeStructureForTVN(temp);
+                        this.PromptPacketList.Add(CreatePromptPacket(JsonIcon, root.JsonKey, root.JsonValue));
                     }
                     catch (Exception ex)
                     {
@@ -734,7 +744,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
                 var final = sb.ToString(); Debug.WriteLine(final);
                 this.FinalOutput.Text = final;
 
-                this.Print(true, " OnGetCSharpCodeFromSelectedItemAsync");
+                this.Print(true, "OnGetCSharpCodeFromSelectedItemAsync");
             }
         }
     }
@@ -776,7 +786,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
         /// </summary>
         private void Print(bool useTimestamp, string msg)
         {
-            this.SystemMessages.Add(new($"{DateTime.Now.ToString("HH:mm:ss")}{msg}"));
+            this.SystemMessages.Add(new($"{(useTimestamp ? $"{DateTime.Now.ToString("HH:mm:ss")} " : "")}{msg}"));
         }
 
         /// <summary>
@@ -849,7 +859,14 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
                 }
                 if (item.PromptContent is ToggleTreeViewNode node)
                 {
-                    tempList.Add(RootNodeTrim(node).Trim());
+                    try
+                    {
+                        tempList.Add(RootNodeTrim(node).Trim());
+                    }
+                    catch (Exception ex)
+                    {
+                        this.Print(true, ex.Message);
+                    }
                 }
             }
             return tempList.ToArray();
@@ -916,19 +933,10 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
                         {
                             try
                             {
-                                // 尝试反序列化为 ToggleTreeViewNode 嵌套
-                                using (JsonDocument doc = JsonDocument.Parse(ps.Text))
-                                {
-                                    var root = new ToggleTreeViewNode() { UseDelayRender = true, ContentRenderType = ContentRenderType.ForJsonEditor, Enable = true, JsonKey = "Root" };
-                                    _helper.DeserializeTreeStructureForTVN(0, root, doc.RootElement);
-                                    if (root.HasChildren)
-                                    {
-                                        var firstNode = root.Children.Count == 1 ? root[0] : root;
-                                        firstNode.ToPS = promptPacket.SwapPsTvn; //设置回调，以便再次转为PS
-                                        promptPacket.PromptContent = firstNode;
-                                        Debug.WriteLine("ChangeToTVN OK");
-                                    }
-                                }
+                                var root = _helper.DeserializeTreeStructureForTVN(ps.Text);
+                                root.ToPS = promptPacket.SwapPsTvn; // 设置回调，以便再次转为PS
+                                promptPacket.PromptContent = root;
+                                Debug.WriteLine("ChangeToTVN OK");
                             }
                             catch (Exception ex)
                             {
@@ -950,6 +958,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
                             catch (Exception ex)
                             {
                                 Debug.WriteLine($"ChangeToPromptString Failed: {ex.Message}");
+                                this.Print(true, ex.Message);
                             }
                             break;
                         }
