@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using TrarsUI.Shared.DTOs;
 using TrarsUI.Shared.Helpers.Enums;
 using TrarsUI.Shared.Helpers.Extensions;
@@ -33,7 +34,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.Helpers
                     JsonValueType.Boolean => bool.TryParse(parent_node.JsonValue, out var boolean) ? boolean : throw new FormatException($"Invalid boolean literal: '{parent_node.JsonValue.Shorten()}'"),
                     JsonValueType.Null => parent_node.JsonValue == "null" ? null! : throw new FormatException($"Invalid null literal: expected 'null', got '{parent_node.JsonValue.Shorten()}'"),
                     JsonValueType.Object => throw new InvalidOperationException("Should not happen: Object should have children"),
-                    JsonValueType.Array => throw new InvalidOperationException("Should not happen: Array should have children"),
+                    JsonValueType.Array => string.IsNullOrEmpty(parent_node.JsonValue) ? Array.Empty<object>() : throw new FormatException($"Invalid array literal: expected an empty value for an empty array, got '{parent_node.JsonValue.Shorten()}'"),
                     _ => throw new InvalidOperationException("Should not happen: Undefined type")
                 };
 
@@ -41,7 +42,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.Helpers
             }
 
             // 待操作列表
-            var childrenList = parent_node.Children.OfType<GateNode>().Where(node => node.Type == GateNodeType.GateBase);
+            var childrenList = parent_node.Children.Where(node => node.Type == GateNodeType.GateBase);
 
             // 父节点ON  -> 返回字典 Dictionary<string, object>
             // 父节点OFF -> 返回列表 List<object>
@@ -210,7 +211,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.Helpers
                     node.Enable = true;
                     foreach (var prop in element.EnumerateObject())
                     {
-                        var next = BuildNode(prop.Name, prop.Value);
+                        var next = BuildNode(prop.Name, prop.Value, indent + "  ");
                         childList.Add(next);
                     }
                     node.AddRange(childList); node.JsonValueType = JsonValueType.Object;
@@ -220,7 +221,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.Helpers
                     node.Enable = false;
                     foreach (var item in element.EnumerateArray())
                     {
-                        var next = BuildNode("", item); // 数组成员 没有key 只有value
+                        var next = BuildNode("", item, indent + "  "); // 数组成员 没有key 只有value
                         childList.Add(next);
                     }
 
@@ -276,6 +277,25 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.Helpers
             }
 
             return node;
+        }
+
+        /// <summary>
+        /// 尝试获取入口名称
+        /// </summary>
+        /// <returns></returns>
+        public string TryGetEntranceName(ToggleTreeViewNode node)
+        {
+            if (!string.IsNullOrEmpty(node.JsonKey)) { return node.JsonKey; }
+
+            if (node.HasChildren)
+            {
+                return node.Children
+                    .Where(gate => gate.Type == GateNodeType.GateBase)
+                    .Select(gate => ((ToggleTreeViewNode)gate.Content).JsonKey)
+                    .FirstOrDefault() ?? "Root";
+            }
+
+            return "";
         }
     }
 }

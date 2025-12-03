@@ -188,7 +188,8 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
                         //    }
                         //}
                         var root = _helper.DeserializeTreeStructureForTVN(content);
-                        this.PromptPacketList.Add(CreatePromptPacket(JsonIcon, root.JsonKey, root.JsonValue));
+                        var entranceName = _helper.TryGetEntranceName(root);
+                        this.PromptPacketList.Add(CreatePromptPacket(JsonIcon, entranceName, root));
                     }
                     catch (Exception ex)
                     {
@@ -337,9 +338,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
 
                 if (count > 1 && index > 0)
                 {
-                    var previous = list[index - 1]; // 获取 list[index - 1]
-                    list.RemoveAt(index - 1); // 移除 previous
-                    list.Insert(index, previous); // 将 previous 插入到 item 的旧位置
+                    list.Move(index, index - 1);
                 }
             });
         }
@@ -359,9 +358,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
 
                 if (count > 1 && index > -1 && index < count - 1)
                 {
-                    var next = list[index + 1]; // 获取 list[index + 1]
-                    list.RemoveAt(index + 1); // 移除 next
-                    list.Insert(index, next); // 将 next 插入到 item 的旧位置
+                    list.Move(index, index + 1);
                 }
             });
         }
@@ -692,7 +689,8 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
                         //    }
                         //}
                         var root = _helper.DeserializeTreeStructureForTVN(temp);
-                        this.PromptPacketList.Add(CreatePromptPacket(JsonIcon, root.JsonKey, root.JsonValue));
+                        var entranceName = _helper.TryGetEntranceName(root);
+                        this.PromptPacketList.Add(CreatePromptPacket(JsonIcon, entranceName, root));
                     }
                     catch (Exception ex)
                     {
@@ -805,7 +803,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
 
             var childDepth = 0;
 
-            foreach (var node in gate.Children.OfType<GateNode>())
+            foreach (var node in gate.Children)
             {
                 if (node.Type == GateNodeType.GateBase)
                 {
