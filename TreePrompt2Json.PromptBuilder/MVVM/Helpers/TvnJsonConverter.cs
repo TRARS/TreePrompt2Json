@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-using System.Text.Json;
-using System.Text.Json.Nodes;
+﻿using System.Text.Json;
 using TrarsUI.Shared.DTOs;
 using TrarsUI.Shared.Helpers.Enums;
 using TrarsUI.Shared.Helpers.Extensions;
@@ -9,11 +7,6 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.Helpers
 {
     internal partial class TvnJsonConverter
     {
-        /// <summary>
-        /// 避免使用，因为会造成更多困扰
-        /// </summary>
-        private bool arrayUp = false;
-
         /// <summary>
         /// 序列化预备
         /// </summary>
@@ -173,7 +166,7 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.Helpers
                     }
                     else
                     {
-                        objectList.Add(new Dictionary<string, object>() { { x.Key, x.Value }, });
+                        objectList.Add(new Dictionary<string, object>() { { x.Key, x.Value } });
                     }
                 }
 
@@ -223,34 +216,6 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.Helpers
                     {
                         var next = BuildNode("", item, indent + "  "); // 数组成员 没有key 只有value
                         childList.Add(next);
-                    }
-
-                    if (arrayUp)
-                    {
-                        foreach (var child in childList)
-                        {
-                            if (child.GateBaseList.Count == 1 && child.GateBaseList[0].GateBaseList.Count == 0)
-                            {
-                                child.JsonKey = child.GateBaseList[0].JsonKey;
-                                child.JsonValue = child.GateBaseList[0].JsonValue;
-                                child.Children.Clear();
-                            }
-                            if (child.GateBaseList.Count == 1 && child.GateBaseList[0].GateBaseList.Count > 1)
-                            {
-                                Debug.WriteLine($"parent:{node.JsonKey}, child:{child.GateBaseList[0].JsonKey}, children:{child.GateBaseList[0].GateBaseList.Count}");
-
-                                child.JsonKey = child.GateBaseList[0].JsonKey;
-                                child.JsonValue = "";
-
-                                var temp = new List<ToggleTreeViewNode>();
-                                foreach (var bk in child.GateBaseList[0].GateBaseList)
-                                {
-                                    temp.Add(bk);
-                                }
-                                child.Children.Clear();
-                                child.AddRange(temp, true);
-                            }
-                        }
                     }
 
                     node.AddRange(childList); node.JsonValueType = JsonValueType.Array;

@@ -44,17 +44,17 @@ namespace TreePrompt2Json.PromptBuilder.MVVM.ViewModels
 
             this.PromptPacketList = new()
             {
-                CreatePromptPacket(JsonIcon, "系统规则", system),
-                CreatePromptPacket(JsonIcon, "角色A", charA, isChecked: autoSelect),
-                CreatePromptPacket(JsonIcon, "角色B", charB),
-                CreatePromptPacket(JsonIcon, "角色C", charC),
-                CreatePromptPacket(JsonIcon, "故事设定", story),
-                CreatePromptPacket(JsonIcon, "故事楔子", plot),
+                CreatePromptPacket(IconList, "系统规则", system),
+                CreatePromptPacket(IconList, "角色A", charA, isChecked: autoSelect),
+                CreatePromptPacket(IconList, "角色B", charB),
+                CreatePromptPacket(IconList, "角色C", charC),
+                CreatePromptPacket(IconList, "故事设定", story),
+                CreatePromptPacket(IconList, "故事楔子", plot),
             };
 
             this.PromptPacketList2 = new()
             {
-                CreatePromptPacket(TextIcon, "接续词", @continue),
+                CreatePromptPacket(IconList, "接续词", @continue),
             };
         }
     }

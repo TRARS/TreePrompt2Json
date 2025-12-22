@@ -50,6 +50,7 @@ namespace TreePrompt2Json
                            sc.AddSingleton<IJsonConfigManagerService, JsonConfigManagerService>();
                            sc.AddSingleton<IMessageBoxService, MessageBoxService>();
                            sc.AddTransient<IStringEncryptorService, StringEncryptorService>();
+                           sc.AddScoped<IThemeColorService, ThemeColorService>();
                            sc.AddScoped<ITokenProviderService, TokenProviderService>();
                            sc.AddSingleton<IContentProviderService, TreePrompt2Json.PromptBuilder.EntryService>();
 
